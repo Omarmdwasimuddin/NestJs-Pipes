@@ -387,3 +387,13 @@ Pipe Controller-এর আগে execute হয়।
 * Bad request early detect হয়
 
 ---
+
+## class-validator
+
+Nest class-validator লাইব্রেরির সাথে খুব ভালোভাবে কাজ করে। এই শক্তিশালী লাইব্রেরিটি decorator-ভিত্তিক validation ব্যবহার করার সুযোগ দেয়। Decorator-ভিত্তিক validation খুবই শক্তিশালী, বিশেষ করে যখন এটি Nest-এর Pipe ক্ষমতার সাথে ব্যবহার করা হয়, কারণ তখন আমরা প্রসেস হওয়া প্রোপার্টির metatype-এ অ্যাক্সেস পাই।
+
+শুরু করার আগে আমাদের প্রয়োজনীয় প্যাকেজগুলো ইনস্টল করতে হবে।
+
+```
+$ nest i --save class-validator class-transformer
+```
