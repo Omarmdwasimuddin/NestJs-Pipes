@@ -657,6 +657,7 @@ export class UpdateUserDto {
 
 NestJS এ validation এইভাবে কাজ করে:
 
+```
 Client Request
       ↓
 DTO
@@ -666,6 +667,7 @@ class-validator decorators
 ValidationPipe
       ↓
 Controller
+```
 
 ---
 
