@@ -222,7 +222,7 @@ create(@Body() body: CreateUserDto) {
 
 ---
 
-# ৫. Global ValidationPipe ব্যবহার করা
+#### ৫. Global ValidationPipe ব্যবহার করা
 
 `main.ts`
 
@@ -390,10 +390,328 @@ Pipe Controller-এর আগে execute হয়।
 
 ## class-validator
 
-Nest class-validator লাইব্রেরির সাথে খুব ভালোভাবে কাজ করে। এই শক্তিশালী লাইব্রেরিটি decorator-ভিত্তিক validation ব্যবহার করার সুযোগ দেয়। Decorator-ভিত্তিক validation খুবই শক্তিশালী, বিশেষ করে যখন এটি Nest-এর Pipe ক্ষমতার সাথে ব্যবহার করা হয়, কারণ তখন আমরা প্রসেস হওয়া প্রোপার্টির metatype-এ অ্যাক্সেস পাই।
+NestJS-এ class-validator হলো একটি library যা DTO (Data Transfer Object) এর মাধ্যমে request data validate করার জন্য ব্যবহার করা হয়।
 
-শুরু করার আগে আমাদের প্রয়োজনীয় প্যাকেজগুলো ইনস্টল করতে হবে।
+সহজভাবে বললে:
+👉 Client থেকে যে data আসে সেটা ঠিক format-এ আছে কিনা check করার জন্য `class-validator` ব্যবহার করা হয়।
+
+---
+
+#### ১. class-validator কেন ব্যবহার করা হয়
+
+ধরো client এই request পাঠালো:
+
+```json
+{
+  "name": "Wasim",
+  "age": 25,
+  "email": "wasim@gmail.com"
+}
+```
+
+এখন server চাইতে পারে:
+
+- name অবশ্যই string
+- age অবশ্যই number
+- email অবশ্যই valid email
+
+এই validation গুলো `class-validator` দিয়ে করা হয়।
+
+---
+
+#### ২. Install করা
+
+NestJS project-এ সাধারণত দুইটা package লাগে:
+
+```bash
+npm install class-validator class-transformer
+```
+
+class-validator → validation rules দেয়
+class-transformer → plain object কে class object বানায়
+
+---
+
+#### ৩. DTO কী
+
+DTO = Data Transfer Object
+
+মানে client থেকে আসা data structure define করা।
+
+Example:
+
+```ts
+create-user.dto.ts
+```
+
+```ts
+import { IsString, IsInt, IsEmail } from 'class-validator';
+
+export class CreateUserDto {
+
+  @IsString()
+  name: string;
+
+  @IsInt()
+  age: number;
+
+  @IsEmail()
+  email: string;
+
+}
+```
+
+এখানে `@IsString()`, `@IsInt()` এগুলো হলো decorator।
+
+---
+
+#### ৪. Controller-এ ব্যবহার
+
+```ts
+@Post()
+createUser(@Body() body: CreateUserDto) {
+  return body;
+}
+```
+
+কিন্তু এখানে validation তখনই কাজ করবে যখন ValidationPipe ব্যবহার করা হবে।
+
+---
+
+#### ৫. ValidationPipe enable করা
+
+`main.ts`
+
+```ts
+import { ValidationPipe } from '@nestjs/common';
+
+async function bootstrap() {
+
+  const app = await NestFactory.create(AppModule);
+
+  app.useGlobalPipes(new ValidationPipe());
+
+  await app.listen(3000);
+}
+bootstrap();
+```
+
+---
+
+#### ৬. এখন validation কাজ করবে
+
+Valid request:
+
+```json
+{
+ "name": "Wasim",
+ "age": 25,
+ "email": "wasim@gmail.com"
+}
+```
+
+---
+
+Invalid request:
+
+```json
+{
+ "name": 123,
+ "age": "abc",
+ "email": "wrongemail"
+}
+```
+
+Response error:
 
 ```
-$ nest i --save class-validator class-transformer
+name must be a string
+age must be an integer number
+email must be an email
 ```
+
+---
+
+#### ৭. Common validation decorators
+
+##### String check
+
+```ts
+@IsString()
+name: string;
+```
+
+---
+
+##### Number check
+
+```ts
+@IsInt()
+age: number;
+```
+
+---
+
+##### Email check
+
+```ts
+@IsEmail()
+email: string;
+```
+
+---
+
+##### Empty না হওয়া
+
+```ts
+@IsNotEmpty()
+name: string;
+```
+
+---
+
+##### Minimum length
+
+```ts
+@MinLength(6)
+password: string;
+```
+
+---
+
+##### Maximum length
+
+```ts
+@MaxLength(20)
+username: string;
+```
+
+---
+
+##### Minimum value
+
+```ts
+@Min(18)
+age: number;
+```
+
+---
+
+##### Maximum value
+
+```ts
+@Max(60)
+age: number;
+```
+
+---
+
+#### ৮. Multiple validation example
+
+```ts
+import {
+  IsString,
+  IsInt,
+  IsEmail,
+  MinLength,
+  IsNotEmpty
+} from 'class-validator';
+
+export class CreateUserDto {
+
+  @IsString()
+  @IsNotEmpty()
+  name: string;
+
+  @IsEmail()
+  email: string;
+
+  @IsInt()
+  age: number;
+
+  @MinLength(6)
+  password: string;
+
+}
+```
+
+---
+
+#### ৯. Optional field
+
+যদি field optional হয়
+
+```ts
+import { IsOptional, IsString } from 'class-validator';
+
+export class UpdateUserDto {
+
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+}
+```
+
+---
+
+#### ১০. Validation Flow
+
+NestJS এ validation এইভাবে কাজ করে:
+
+```
+Client Request
+      ↓
+DTO
+      ↓
+class-validator decorators
+      ↓
+ValidationPipe
+      ↓
+Controller
+```
+
+---
+
+#### ১১. Real Example (Login API)
+
+DTO
+
+```ts
+export class LoginDto {
+
+  @IsEmail()
+  email: string;
+
+  @MinLength(6)
+  password: string;
+
+}
+```
+
+Controller
+
+```ts
+@Post('login')
+login(@Body() body: LoginDto) {
+  return body;
+}
+```
+
+Invalid request:
+
+```json
+{
+ "email":"wrong",
+ "password":"123"
+}
+```
+
+Error:
+
+```
+email must be an email
+password must be longer than 6 characters
+```
+
+---
