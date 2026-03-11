@@ -440,9 +440,9 @@ DTO = Data Transfer Object
 
 Example:
 
-```ts
+`
 create-user.dto.ts
-```
+`
 
 ```ts
 import { IsString, IsInt, IsEmail } from 'class-validator';
@@ -524,11 +524,9 @@ Invalid request:
 
 Response error:
 
-```
 name must be a string
 age must be an integer number
 email must be an email
-```
 
 ---
 
@@ -659,7 +657,6 @@ export class UpdateUserDto {
 
 NestJS এ validation এইভাবে কাজ করে:
 
-```
 Client Request
       ↓
 DTO
@@ -669,7 +666,6 @@ class-validator decorators
 ValidationPipe
       ↓
 Controller
-```
 
 ---
 
@@ -709,9 +705,7 @@ Invalid request:
 
 Error:
 
-```
 email must be an email
 password must be longer than 6 characters
-```
 
 ---
