@@ -388,8 +388,329 @@ Pipe Controller-এর আগে execute হয়।
 
 ---
 
-## `ValidationPipe`
+## ValidationPipe
 
+NestJS-এ ValidationPipe হলো একটি Pipe, যা client থেকে আসা data DTO অনুযায়ী validate করে এবং প্রয়োজনে transform করে।
+এটা সাধারণত `class-validator` এবং `class-transformer` এর সাথে ব্যবহার করা হয়।
+
+সহজভাবে:
+
+```
+Client Request
+      ↓
+ValidationPipe
+      ↓
+DTO rules check
+      ↓
+Controller
+```
+
+মানে Controller-এ যাওয়ার আগে request data ঠিক আছে কিনা ValidationPipe check করে।
+
+---
+
+#### ১. ValidationPipe কেন ব্যবহার করা হয়
+
+ValidationPipe তিনটা বড় কাজ করে:
+
+#### ১️⃣ Data Validation
+
+DTO-তে যে rules দেওয়া আছে তা check করে।
+
+Example DTO:
+
+```ts
+import { IsString, IsInt } from 'class-validator';
+
+export class CreateUserDto {
+
+  @IsString()
+  name: string;
+
+  @IsInt()
+  age: number;
+
+}
+```
+
+যদি client ভুল data পাঠায়:
+
+```json
+{
+ "name": 123,
+ "age": "abc"
+}
+```
+
+ValidationPipe error দিবে।
+
+---
+
+#### ২️⃣ Data Transformation
+
+Query / Param সবসময় string আসে।
+
+Example request
+
+GET /users?id=10
+
+এখানে `id` string।
+
+ValidationPipe transform করলে:
+
+"10" → 10
+
+number হয়ে যায়।
+
+---
+
+#### ৩️⃣ Extra field remove করা
+
+Client যদি extra field পাঠায়।
+
+Example:
+
+```json
+{
+ "name": "Wasim",
+ "age": 25,
+ "hack": "something"
+}
+```
+
+ValidationPipe চাইলে `hack` remove করে দিতে পারে।
+
+---
+
+#### ২. ValidationPipe install করার আগে
+
+NestJS project-এ এই দুইটা package লাগে:
+
+```bash
+npm install class-validator class-transformer
+```
+
+---
+
+#### ৩. Global ValidationPipe ব্যবহার করা (Best Practice)
+
+`main.ts`
+
+```ts
+import { ValidationPipe } from '@nestjs/common';
+
+async function bootstrap() {
+
+  const app = await NestFactory.create(AppModule);
+
+  app.useGlobalPipes(new ValidationPipe());
+
+  await app.listen(3000);
+}
+bootstrap();
+```
+
+এখন পুরো project-এ validation কাজ করবে।
+
+---
+
+#### ৪. DTO Example
+
+```ts
+import { IsString, IsEmail, MinLength } from 'class-validator';
+
+export class RegisterDto {
+
+  @IsString()
+  name: string;
+
+  @IsEmail()
+  email: string;
+
+  @MinLength(6)
+  password: string;
+
+}
+```
+
+---
+
+#### ৫. Controller
+
+```ts
+@Post('register')
+register(@Body() body: RegisterDto) {
+  return body;
+}
+```
+
+---
+
+#### ৬. Valid Request
+
+```json
+{
+ "name": "Wasim",
+ "email": "wasim@gmail.com",
+ "password": "123456"
+}
+```
+
+Works fine.
+
+---
+
+#### ৭. Invalid Request
+
+```json
+{
+ "name": 123,
+ "email": "wrong",
+ "password": "123"
+}
+```
+
+Error:
+
+name must be a string
+email must be an email
+password must be longer than 6 characters
+
+---
+
+#### ৮. ValidationPipe Options (Very Important)
+
+#### transform
+
+string → number convert করে।
+
+```ts
+app.useGlobalPipes(
+  new ValidationPipe({
+    transform: true,
+  }),
+);
+```
+
+Example
+
+GET /users?id=10
+
+"10" → 10
+
+---
+
+#### whitelist
+
+DTO-তে নেই এমন field remove করে।
+
+```ts
+new ValidationPipe({
+  whitelist: true
+})
+```
+
+Example request:
+
+```json
+{
+ "name": "Wasim",
+ "age": 25,
+ "hack": "bad"
+}
+```
+
+Result:
+
+hack field remove
+
+---
+
+#### forbidNonWhitelisted
+
+extra field থাকলে error দিবে।
+
+```ts
+new ValidationPipe({
+  whitelist: true,
+  forbidNonWhitelisted: true
+})
+```
+
+Example:
+
+```json
+{
+ "name":"Wasim",
+ "age":25,
+ "hack":"bad"
+}
+```
+
+Error:
+
+property hack should not exist
+
+---
+
+#### ৯. Production Best Practice
+
+Senior developers সাধারণত এভাবে use করে:
+
+```ts
+app.useGlobalPipes(
+  new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true
+  })
+);
+```
+
+এটা:
+
+- invalid data block করে
+- extra field block করে
+- type convert করে
+
+---
+
+#### ১০. ValidationPipe কোথায় ব্যবহার করা যায়
+
+##### Parameter level
+
+```ts
+@Post()
+create(@Body(new ValidationPipe()) body: CreateUserDto) {}
+```
+
+---
+
+##### Method level
+
+```ts
+@UsePipes(new ValidationPipe())
+@Post()
+create(@Body() body: CreateUserDto) {}
+```
+
+---
+
+##### Controller level
+
+```ts
+@UsePipes(new ValidationPipe())
+@Controller('users')
+export class UserController {}
+```
+
+---
+
+#### Global level (Best)
+
+`main.ts`
+
+---
 
 ## class-validator
 
